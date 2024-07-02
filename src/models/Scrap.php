@@ -15,7 +15,6 @@ class Scrap implements Subject
     private $observers = [];
     private $lastFetchedAds = [];
 
-    private $linkUrl;
 
 
     public function attach(Observer $observer)
@@ -39,7 +38,7 @@ class Scrap implements Subject
 
     public function fetchAds()
     {
-        $web = new \Spekulatius\PHPScraper\PHPScraper;
+        $web = new PHPScraper();
 
         $web->go('https://www.ss.com/lv/real-estate/flats/riga/all/');
 
@@ -54,27 +53,26 @@ class Scrap implements Subject
         });
 
         foreach ($rows as $row) {
-            echo "Link: " . $row['link'] . "\n";
 
             if ($row['link'] && !in_array($row['link'], $this->lastFetchedAds)) {
                 $detailPage = new PHPScraper();
                 $detailPage->go($row['link']);
-                $detailInfo = Scrap::extractInfo($detailPage);
+                $detailInfo = $this->extractInfo($detailPage, $row['link']);
 
-                print_r($detailInfo);
+                if(isset($detailInfo['Cena']) && preg_match('/\d+\s?€\/mēn\./', $detailInfo['Cena'])){
+                    $this->notify($detailInfo);
 
-                $this->notify($detailInfo);
+                    $this->lastFetchedAds[] = $row['link'];
 
-                $this->lastFetchedAds[] = $row['link'];
+                    echo "\n" . $row['link'];
 
-                $this->linkUrl = $row['link'];
-
+                }
             }
         }
     }
 
 
-    function extractInfo($detailPage): array
+    function extractInfo($detailPage, $link): array
     {
         if (!$detailPage) {
             return ['gae'];
@@ -93,6 +91,7 @@ class Scrap implements Subject
             if ($priceLabelNode->count() > 0 && $priceNode->count() > 0) {
                 $priceLabel = $priceLabelNode->text();
                 $price = $priceNode->text();
+
                 $info[trim($priceLabel, ":")] = trim($price);
             }
 
@@ -105,12 +104,12 @@ class Scrap implements Subject
             $detailPage->filter("//*[@class='ads_photo_label']")->each(function ($node) use (&$info) {
                 $photoLinkNode = $node->filter("a");
                 if ($photoLinkNode->count() > 0) {
-                    $photo_link = (string) $photoLinkNode->attr('href');
+                    $photo_link = $photoLinkNode->attr('href');
                     $info[trim("Photo_link", ":")] = trim($photo_link);
                 }
             });
 
-            $info[trim("LinkUrl", ":")] = $this->linkUrl;
+            $info[trim("LinkUrl", ":")] = $link;
 
             return $info;
 

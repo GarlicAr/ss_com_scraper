@@ -27,27 +27,37 @@ class DiscordNotifier implements Observer
                 }
             }
 
-            $adDetails = array_map('htmlspecialchars', $adDetails);
-            $adDetails['Description'] = substr($adDetails['Description'], 0, 100);
+            foreach ($adDetails as $key => $value) {
+                if (!mb_check_encoding($value, 'UTF-8') || !($value === mb_convert_encoding(mb_convert_encoding($value, 'UTF-32', 'UTF-8' ), 'UTF-8', 'UTF-32'))) {
+                    $adDetails[$key] = iconv(mb_detect_encoding($value, mb_detect_order(), true), "UTF-8//IGNORE", $value);
+                }
+            }
+
+            $adDetails['Description'] = substr($adDetails['Description'], 0, 300);
 
             if(!filter_var($adDetails['Photo_link'], FILTER_VALIDATE_URL)) {
                 throw new \Exception("Invalid URL: {$adDetails['Photo_link']}");
             }
 
+            $content = "=================================================\n\n
+            **Cena**: {$adDetails['Cena']}\n
+            **Istabas**: {$adDetails['Istabas']}\n
+            **Vieta**: {$adDetails['Pilsēta']}\n
+            **Iela**: {$adDetails['Iela']}\n
+            **Rajons**: {$adDetails['Rajons']}\n
+            **Description**: {$adDetails['Description']}\n
+            **Link**: {$adDetails['LinkUrl']}\n
+            {$adDetails['Photo_link']}\n\n";
+
             $data = [
-                "content" => "=================================================\n\n
-                **Cena**: {$adDetails['Cena']}\n
-                **Vieta**: {$adDetails['Pilsēta']}\n
-                **Iela**: {$adDetails['Iela']}\n
-                **Rajons**: {$adDetails['Rajons']}\n
-                **Description**: {$adDetails['Description']}\n
-                **Link**: {$adDetails['LinkUrl']}\n
-                {$adDetails['Photo_link']}\n\n"
+                'content' => $content
             ];
 
-            $jsonData = json_encode($data);
+            $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-            error_log('DiscordNotifier Webhook URL: ' . $this->webhookUrl);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \Exception('JSON encoding error: ' . json_last_error_msg());
+            }
 
             $ch = curl_init($this->webhookUrl);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

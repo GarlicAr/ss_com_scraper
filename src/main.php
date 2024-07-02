@@ -22,7 +22,7 @@ $scraper->attach($discordNotifier);
 
 while (true){
     $scraper->fetchAds();
-    sleep(50);
+    sleep(10);
 }
 
 ?>
