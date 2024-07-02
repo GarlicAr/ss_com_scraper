@@ -1,9 +1,13 @@
 <?php
 
-class DiscordNotifier implements Observer{
+namespace Arvid\Test\models;
+
+class DiscordNotifier implements Observer
+{
     private $webhookUrl;
 
-    public function __construct($webhookUrl) {
+    public function __construct($webhookUrl)
+    {
         $this->webhookUrl = $webhookUrl;
     }
 
@@ -12,7 +16,8 @@ class DiscordNotifier implements Observer{
         //TODO
     }
 
-    private function sendDiscordMessage($adDetails) {
+    private function sendDiscordMessage($adDetails)
+    {
         $data = [
             "content" => "New Apartment Ad:\nPrice: {$adDetails['Price']}\nPlace: {$adDetails['Place']}\nIela: {$adDetails['Iela']}\nDescription: {$adDetails['Description']}\nLink: {$adDetails['link']}"
         ];
