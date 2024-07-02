@@ -1,0 +1,17 @@
+{
+    "name": "arvid/test",
+    "autoload": {
+        "psr-4": {
+            "Arvid\\Test\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Arvids Ivbuls",
+            "email": "127345579+GarlicAr@users.noreply.github.com"
+        }
+    ],
+    "require": {
+        "spekulatius/phpscraper": "^3.0"
+    }
+}
